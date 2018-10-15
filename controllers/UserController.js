@@ -105,7 +105,7 @@ router.post('/login', function(req, res) {
 	//if (req.decodedEmail != req.body.email) return res.status(500).send({ auth: false, message: 'Failed to authenticate token. (email)' });
 	dbrepo.logintUser('users', findkey, function(err, result) {
 		if (err) return res.status(500).send('Error on the server.');
-		if (result.rowCount===0) return res.status(404).send('No user found.');
+		if (result.rowCount===0) return res.status(404).send({ auth: false, token: null });
 		var passwordIsValid = bcrypt.compareSync(req.body.password, result.rows[0].password);
 		if (!passwordIsValid) return res.status(401).send({ auth: false, token: null });
 		var token = jwt.sign({ id: result._id, email: result.email }, config.secret, {
