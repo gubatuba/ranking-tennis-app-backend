@@ -1,0 +1,21 @@
+{
+  "name": "ranking-tennis-app-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server",
+    "debug": "node --nolazy --inspect-brk=9229 server.js"
+  },
+  "license": "Apache",
+  "engines": {
+    "node": "6.3.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.18.3",
+    "express": "^4.16.3",
+    "jsonwebtoken": "^8.3.0",
+    "mongodb": "^3.1.6",
+    "node-mailjet": "^3.3.0"
+  }
+}
