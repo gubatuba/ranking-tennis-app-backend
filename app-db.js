@@ -1,18 +1,40 @@
 'use strict'
-//console.log('2.0');
 
 var config = require("./protected-config");
 
 
-var MongoClient = require('mongodb').MongoClient;
-//assert = require('assert');
-var ObjectId = require('mongodb').ObjectID;
-
-var url = config.url;
+const pg = require('pg');
+const pool = new pg.Pool({
+	user: config.user,
+	host: config.host,
+	database: config.database,
+	password: config.password,
+	port: config.port
+});
 
 class DbRepo {
-  
-	insertOne(collection, entity, callback) {
+
+	insertUser(collection, entity, callback) {
+		pool.query("INSERT INTO users (email, password) VALUES ($1, $2)",
+		[entity.email, entity.password], function(err, result) {
+			
+			callback(err, result);
+			console.log (err, result);
+			pool.end;
+		});
+	}
+
+	logintUser(collection, entity, callback) {
+		pool.query("SELECT * FROM users WHERE email = $1",
+		[entity.email], function(err, result) {
+			
+			callback(err, result);
+			console.log (err, result);
+			pool.end;
+		});
+	}
+
+/* 	insertOne(collection, entity, callback) {
 		MongoClient.connect(url, { useNewUrlParser: true }, function(err, client) {
 			var db = client.db('ranking-tennis-app-backend-db');      
 			db.collection(collection).insertOne(entity, function(err, result) {
@@ -21,7 +43,7 @@ class DbRepo {
 			client.close();	
 		});
 	}
-
+ */
 	findOne(collection, findkey, callback) {
 		MongoClient.connect(url, { useNewUrlParser: true }, function(err, client) {
 			var db = client.db('ranking-tennis-app-backend-db');      
