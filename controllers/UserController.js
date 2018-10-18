@@ -25,7 +25,7 @@ router.post('/register', function (req, res) {
 			expiresIn: 86400 // expires in 24 hours
 		}); 
 		//SendEmail(req.body);
-		res.status(200).send({ auth: true, token: token });
+		res.status(200).send({ auth: true, token: token, id: result.rows[0].id });
  	}); 
 });
 
@@ -109,7 +109,7 @@ router.post('/login', function(req, res) {
 		var token = jwt.sign({ id: result.rows[0].id, email: result.rows[0].email }, config.secret, {
 			expiresIn: 86400 // expires in 24 hours
 		});
-		res.status(200).send({ auth: true, token: token });
+		res.status(200).send({ auth: true, token: token, id: result.rows[0].id });
 	});
 });
 
