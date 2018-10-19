@@ -17,4 +17,7 @@ app.use('/groups', GroupController);
 var UserController = require('./controllers/UserController')
 app.use('/users', UserController);
 
+var RankingController = require('./controllers/RankingController')
+app.use('/rankings', RankingController);
+
 module.exports = app;

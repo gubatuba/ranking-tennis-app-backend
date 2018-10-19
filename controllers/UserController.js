@@ -17,11 +17,11 @@ router.post('/register', function (req, res) {
 	var dbrepo = new DbRepo();
 	var hashedPassword = bcrypt.hashSync(req.body.password, 8);
 	
-	dbrepo.insertUser('users', { email: req.body.email, password: hashedPassword }, function(err, result){
+	dbrepo.insertUser({ email: req.body.email, password: hashedPassword }, function(err, result){
 		if (err) return res.status(500).send("There was a problem registering the user.")
 
 		// create a token
-		var token = jwt.sign({ id: result.rows[0].id, email: req.body.email }, config.secret, {
+		var token = jwt.sign({ id: result.rows[0].id, email: req.body.email, role: result.rows[0].role }, config.secret, {
 			expiresIn: 86400 // expires in 24 hours
 		}); 
 		//SendEmail(req.body);
@@ -36,7 +36,7 @@ router.post('/', VerifyToken, function (req, res) {
 	
 	var findkey = { id : req.userId };
 	if (req.decodedEmail != req.body.email) return res.status(500).send({ auth: false, message: 'Failed to authenticate token. (email)' });
-	dbrepo.updateUser('users', findkey, { password: hashedPassword }, function(err, result){
+	dbrepo.updateUser(findkey, { password: hashedPassword }, function(err, result){
 		if (err) {
 			res.status(500).send({ message: err.message });
 			return;
@@ -59,8 +59,8 @@ router.post('/', VerifyToken, function (req, res) {
 // RETURNS ALL THE USERS IN THE DATABASE
 router.get('/', VerifyToken, function (req, res) {
 	var dbrepo = new DbRepo();
-	if (req.decodedEmail != config.adminEmail) return res.status(500).send({ auth: false, message: 'Failed to authenticate token. (email)' });
-	dbrepo.findUser('users', function(err, result) {
+	if (req.role != config.adminRole) return res.status(500).send({ auth: false, message: 'Failed to authenticate token. (role)' });
+	dbrepo.findUser(function(err, result) {
 		if (err) {
 			res.status(500).send(err);
 			return;
@@ -79,8 +79,8 @@ router.get('/', VerifyToken, function (req, res) {
 router.get('/:email', VerifyToken, function(req, res) {
 	var dbrepo = new DbRepo();
 	var findkey = { email : req.params.email };
-	if (req.decodedEmail != config.adminEmail) return res.status(500).send({ auth: false, message: 'Failed to authenticate token. (email)' });
-	dbrepo.findOneUser('users', findkey, function(err, result) {
+	if (req.role != config.adminRole) return res.status(500).send({ auth: false, message: 'Failed to authenticate token. (role)' });
+	dbrepo.findOneUser(findkey, function(err, result) {
 		if (err) {
 			res.status(500).send(err);
 			return;
@@ -100,13 +100,12 @@ router.get('/:email', VerifyToken, function(req, res) {
 router.post('/login', function(req, res) {
 	var dbrepo = new DbRepo();
 	var findkey = { email : req.body.email };
-	//if (req.decodedEmail != req.body.email) return res.status(500).send({ auth: false, message: 'Failed to authenticate token. (email)' });
-	dbrepo.loginUser('users', findkey, function(err, result) {
+	dbrepo.loginUser(findkey, function(err, result) {
 		if (err) return res.status(500).send('Error on the server.');
 		if (result.rowCount===0) return res.status(404).send('No user found.');
 		var passwordIsValid = bcrypt.compareSync(req.body.password, result.rows[0].password);
 		if (!passwordIsValid) return res.status(401).send({ auth: false, token: null });
-		var token = jwt.sign({ id: result.rows[0].id, email: result.rows[0].email }, config.secret, {
+		var token = jwt.sign({ id: result.rows[0].id, email: result.rows[0].email, role: result.rows[0].role }, config.secret, {
 			expiresIn: 86400 // expires in 24 hours
 		});
 		res.status(200).send({ auth: true, token: token, id: result.rows[0].id });
@@ -118,8 +117,8 @@ router.post('/login', function(req, res) {
 router.delete('/:id', VerifyToken, function (req, res) {
     var dbrepo = new DbRepo();
 	var findkey = { id : req.params.id };
-    if (req.decodedEmail != config.adminEmail) return res.status(500).send({ auth: false, message: 'Failed to authenticate token. (email)' });
-	dbrepo.deleteUser('users', findkey, function(err, result) {
+	if (req.role != config.adminRole) return res.status(500).send({ auth: false, message: 'Failed to authenticate token. (role)' });
+	dbrepo.deleteUser(findkey, function(err, result) {
 		if (err) {
 			res.status(500).send(err);
 			return;

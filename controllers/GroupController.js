@@ -15,7 +15,7 @@ router.put('/:id/users/:userId', VerifyToken, function(req, res) {
 	if (req.userId != req.params.userId) return res.status(500).send({ auth: false, message: 'Failed to authenticate token. (id)' });
 	
 	var entity = { groupId : req.params.id, userId: req.userId };
-	dbrepo.insertUserGroup('groups', entity, function(err, result) {
+	dbrepo.insertUserGroup(entity, function(err, result) {
 		if(err) {
 			res.status(500).send(err);
 			return;
@@ -34,13 +34,13 @@ router.put('/:id/users/:userId', VerifyToken, function(req, res) {
 router.post('/:id/users/', VerifyToken, function(req, res) {
 	var dbrepo = new DbRepo();
 	var findkey = { id : req.params.id, userId: req.userId };
-	dbrepo.findOneGroupUser('groups', findkey, function(err, result) {
+	dbrepo.findOneGroupUser(findkey, function(err, result) {
 		if (err) {
 			res.status(500).send(err);
 			return;
 		}
 		if (result.rowCount === 1 && result.rows[0].flag_admin) {
-			dbrepo.updateGroupUser('groups', findkey, req.body, function(err, result) {
+			dbrepo.updateGroupUser(findkey, req.body, function(err, result) {
 				if (err) {
 					res.status(500).send(err);
 					return;
@@ -65,13 +65,13 @@ router.post('/:id/users/', VerifyToken, function(req, res) {
 router.get('/:id/users/', VerifyToken, function(req, res) {
 	var dbrepo = new DbRepo();
 	var findkey = { id : req.params.id, userId: req.userId };
-	dbrepo.findOneGroupUser('groups', findkey, function(err, result) {
+	dbrepo.findOneGroupUser(findkey, function(err, result) {
 		if (err) {
 			res.status(500).send(err);
 			return;
 		}
-		if (result.rowCount === 1 && result.rows[0].flag_admin) {
-			dbrepo.findGroupUser('groups', findkey, function(err, result) {
+		if (result.rowCount === 1 && result.rows[0].approved) {
+			dbrepo.findGroupUser(findkey, function(err, result) {
 				if (err) {
 					res.status(500).send(err);
 					return;
@@ -86,8 +86,8 @@ router.get('/:id/users/', VerifyToken, function(req, res) {
 				};
 			});
 		} else {
-			console.log({ message: 'Usuario não é admin do grupo' });
-			res.send({ message: 'Usuario não é admin do grupo' });	
+			console.log({ message: 'Usuario não participa do grupo' });
+			res.send({ message: 'Usuario não participa do grupo' });	
 			return;	
 		}
 	});	
@@ -97,7 +97,7 @@ router.get('/:id/users/', VerifyToken, function(req, res) {
 router.get('/:id', VerifyToken, function(req, res) {
 	var dbrepo = new DbRepo();
 	var findkey = { id : req.params.id };
-	dbrepo.findOneGroup('groups', findkey, function(err, result) {
+	dbrepo.findOneGroup(findkey, function(err, result) {
 		if (err) {
 			res.status(500).send(err);
 			return;
@@ -116,7 +116,7 @@ router.get('/:id', VerifyToken, function(req, res) {
 router.get('/find/:name', VerifyToken, function(req, res) {
 	var dbrepo = new DbRepo();
 	var findkey = { name : req.params.name };
-	dbrepo.findGroupByName('groups', findkey, function(err, result) {
+	dbrepo.findGroupByName(findkey, function(err, result) {
 		if (err) {
 			res.status(500).send(err);
 			return;
@@ -134,8 +134,8 @@ router.get('/find/:name', VerifyToken, function(req, res) {
 
 router.get('/', VerifyToken, function(req, res) {
 	var dbrepo = new DbRepo();
-	if (req.decodedEmail != config.adminEmail) return res.status(401).send({ auth: false, message: 'Failed to authenticate token. (email)' });
-	dbrepo.findGroup('groups', function(err, result) {
+	if (req.role != config.adminRole) return res.status(500).send({ auth: false, message: 'Failed to authenticate token. (role)' });
+	dbrepo.findGroup(function(err, result) {
 		if (err) {
 			res.status(500).send(err);
 			return;
@@ -154,8 +154,7 @@ router.get('/', VerifyToken, function(req, res) {
 router.put('/', VerifyToken, function (req, res, next) {
 	var dbrepo = new DbRepo();
 	var findkey = { id : req.userId };
-	//if (req.decodedEmail != req.body.admins[0].email) return res.status(401).send({ auth: false, message: 'Failed to authenticate token. (email)' });
-	dbrepo.insertGroup('groups', findkey, req.body, function(err, result){
+	dbrepo.insertGroup(findkey, req.body, function(err, result){
 		if (err) {
 			console.log(err);
 			res.status(500).send({ message: err.message });
@@ -165,7 +164,7 @@ router.put('/', VerifyToken, function (req, res, next) {
 			console.log(result);
 			console.log({ message: 'Insert ok', id: result.rows[0].id });
 			var inserData = { groupId : result.rows[0].id, userId : req.userId };
-			dbrepo.insertAdmin('groups', findkey, inserData, function(err, result){
+			dbrepo.insertAdmin(findkey, inserData, function(err, result){
 				if (err) {
 					console.log(err);
 					res.status(500).send({ message: err.message });

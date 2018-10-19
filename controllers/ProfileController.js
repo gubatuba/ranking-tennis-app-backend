@@ -13,7 +13,7 @@ router.get('/:email', VerifyToken, function(req, res) {
 	var dbrepo = new DbRepo();
 	var findkey = { id : req.userId };
 	if (req.decodedEmail != req.params.email) return res.status(401).send({ auth: false, message: 'Failed to authenticate token. (email)' });
-	dbrepo.findOneProfile('profiles', findkey, function(err, result) {
+	dbrepo.findOneProfile(findkey, function(err, result) {
 		if (err) {
 			res.status(500).send(err);
 			return;
@@ -31,8 +31,8 @@ router.get('/:email', VerifyToken, function(req, res) {
 
 router.get('/', VerifyToken, function(req, res) {
 	var dbrepo = new DbRepo();
-	if (req.decodedEmail != config.adminEmail) return res.status(401).send({ auth: false, message: 'Failed to authenticate token. (email)' });
-	dbrepo.findProfile('profiles', function(err, result) {
+	if (req.role != config.adminRole) return res.status(500).send({ auth: false, message: 'Failed to authenticate token. (role)' });
+	dbrepo.findProfile(function(err, result) {
 		if (err) {
 			res.status(500).send(err);
 			return;
@@ -52,7 +52,7 @@ router.post('/', VerifyToken, function (req, res, next) {
 	var dbrepo = new DbRepo();
 	var findkey = { id : req.userId };
 	if (req.decodedEmail != req.body.email) return res.status(401).send({ auth: false, message: 'Failed to authenticate token. (email)' });
-	dbrepo.upsertProfile('profiles', findkey, req.body, function(err, result){
+	dbrepo.upsertProfile(findkey, req.body, function(err, result){
 		if (err) {
 			res.status(500).send({ message: err.message });
 			return;

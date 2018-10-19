@@ -14,6 +14,7 @@ function verifyToken(req, res, next) {
     // if everything good, save to request for use in other routes
     req.userId = decoded.id;
     req.decodedEmail = decoded.email;
+    req.role = decoded.role;
     /* if (req.method == "GET") {
       if (req.params.email == decoded.email) {
         req.userId = decoded.id;
