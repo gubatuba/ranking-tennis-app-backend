@@ -2,6 +2,7 @@ var DbRepo = require('../app-db');
 var express = require('express');
 var router = express.Router();
 var VerifyToken = require('../auth/VerifyToken');
+var VerifyAdminToken = require('../auth/VerifyToken');
 var SendEmail = require('../app-email');
 var bcrypt = require('bcryptjs');
 var jwt = require('jsonwebtoken');
@@ -21,7 +22,7 @@ router.post('/register', function (req, res) {
 		if (err) return res.status(500).send("There was a problem registering the user.")
 
 		// create a token
-		var token = jwt.sign({ id: result.rows[0].id, email: req.body.email, role: result.rows[0].role }, config.secret, {
+		var token = jwt.sign({ id: result.rows[0].id, email: req.body.email, role: 'user' }, config.secret, {
 			expiresIn: 86400 // expires in 24 hours
 		}); 
 		//SendEmail(req.body);
@@ -57,7 +58,7 @@ router.post('/', VerifyToken, function (req, res) {
 });
 
 // RETURNS ALL THE USERS IN THE DATABASE
-router.get('/', VerifyToken, function (req, res) {
+router.get('/', VerifyAdminToken, function (req, res) {
 	var dbrepo = new DbRepo();
 	if (req.role != config.adminRole) return res.status(500).send({ auth: false, message: 'Failed to authenticate token. (role)' });
 	dbrepo.findUser(function(err, result) {

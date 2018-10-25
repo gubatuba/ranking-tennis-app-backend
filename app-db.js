@@ -2,7 +2,6 @@
 
 var config = require("./protected-config");
 
-
 const pg = require('pg');
 const pool = new pg.Pool({
 	user: config.user,
@@ -69,18 +68,6 @@ class DbRepo {
 		});
 	}
 
-
-/* 	findOne(findkey, callback) {
-		MongoClient.connect(url, { useNewUrlParser: true }, function(err, client) {
-			var db = client.db('ranking-tennis-app-backend-db');      
-			db.collection(collection).findOne(findkey, function(err, result) {
-				callback(err, result);
-			});
-			client.close();	
-		});
-	} */
-
-
 	findUser(callback) {
 		pool.query("SELECT * from users",
 		function(err, result) {
@@ -128,6 +115,16 @@ class DbRepo {
 		});
 	}
 
+	findGroupApprovedUser(findkey, callback) {
+		pool.query("SELECT * FROM group_users WHERE group_id = $1 AND approved;",
+		[findkey.id],
+		function(err, result) {
+			
+			callback(err, result);
+			pool.end;
+		});
+	}
+
 	findOneGroupUser(findkey, callback) {
 		pool.query("SELECT * FROM group_users WHERE group_id = $1 AND user_id = $2;",
 		[findkey.id, findkey.userId],
@@ -149,7 +146,7 @@ class DbRepo {
 	}
 
 	findOneRanking(findkey, callback) {
-		pool.query("SELECT * FROM rankig_users WHERE group_id = $1 ORDER BY points;",
+		pool.query("SELECT *, COALESCE(points, 0) as fullpoints FROM rankig_users ru RIGHT JOIN group_users gu ON ru.group_id = gu.group_id AND ru.user_id = gu.user_id , profiles p WHERE gu.user_id = p.user_id AND gu.group_id = $1 AND approved ORDER BY fullpoints DESC;",
 		[findkey.id],
 		function(err, result) {
 			
@@ -157,6 +154,17 @@ class DbRepo {
 			pool.end;
 		});
 	}
+
+	findOneDraw(findkey, callback) {
+		pool.query("SELECT *, COALESCE(points, 0) as fullpoints FROM rankig_users ru RIGHT JOIN group_users gu ON ru.group_id = gu.group_id AND ru.user_id = gu.user_id , profiles p WHERE gu.user_id = p.user_id AND gu.group_id = $1 AND approved ORDER BY fullpoints DESC;",
+		[findkey.id],
+		function(err, result) {
+			
+			callback(err, result);
+			pool.end;
+		});
+	}
+
 
 	findOneChallenge(findkey, callback) {
 		pool.query("SELECT * FROM challenges WHERE group_id = $1 AND challenger_id = $2 AND challenged_id = $3;",
@@ -168,8 +176,18 @@ class DbRepo {
 		});
 	}
 
+	findOneChallengeByRoundAndGame(findkey, callback) {
+		pool.query("SELECT c.id, c.group_id, gt.tag, c.challenger_id, c.challenged_id, c.round, c.game FROM challenges c, groups g, group_types gt WHERE c.group_id = g.id AND g.group_type = gt.id AND c.group_id = $1 AND c.round = $2 AND c.game = $3;",
+		[findkey.id, findkey.round, findkey.game],
+		function(err, result) {
+			
+			callback(err, result);
+			pool.end;
+		});
+	}
+
 	findOneChallengeById(findkey, callback) {
-		pool.query("SELECT * FROM challenges WHERE id = $1;",
+		pool.query("SELECT * FROM challenges c, groups g, group_types gt WHERE c.group_id = g.id AND g.group_type = gt.id AND c.id = $1;",
 		[findkey.id],
 		function(err, result) {
 			
@@ -206,7 +224,16 @@ class DbRepo {
 			callback(err, result);
 			pool.end;
 		});
-    }
+	}
+	
+	deleteDrawChallenge(findkey, callback) {
+		pool.query("DELETE FROM challenges WHERE group_id = $1",
+		[findkey.id ], function(err, result) {
+			
+			callback(err, result);
+			pool.end;
+		});
+	}
 
 	/* delete(findkey, entity, callback) {
 		MongoClient.connect(url, { useNewUrlParser: true }, function(err, client) {
@@ -240,9 +267,18 @@ class DbRepo {
 		});
 	}
 
-	updateChallenge(findkey, entity, callback) {
+	updateChallengeStatus(findkey, entity, callback) {
 		pool.query("UPDATE challenges set status = $1 WHERE id = $2",
 		[entity.status, findkey.id ], function(err, result) {
+			
+			callback(err, result);
+			pool.end;
+		});
+	}
+
+	updateChallengeChallenger(findkey, entity, callback) {
+		pool.query("UPDATE challenges set challenger_id = $1 WHERE id = $2",
+		[entity.challenger, findkey.id ], function(err, result) {
 			
 			callback(err, result);
 			pool.end;
@@ -290,8 +326,20 @@ class DbRepo {
 	}
 
 	insertChallenge(entity, callback) {
-		pool.query("INSERT INTO challenges(group_id, challenger_id, challenged_id, date) VALUES ($1, $2, $3, now()) RETURNING id;",
-		[entity.id, entity.userId, entity.challengedId], function(err, result) {
+		var challengeStatus = 'C';
+		if (entity.tag === 'draw') {
+			challengeStatus = 'A';
+		}
+		var game = 1;
+		var round = 1;
+		if (entity.round) {
+			round = entity.round;
+		}
+		if (entity.game) {
+			game = entity.game;
+		}
+		pool.query("INSERT INTO challenges(group_id, challenger_id, challenged_id, date, status, round, game) VALUES ($1, $2, $3, now(), $4, $5, $6) RETURNING id;",
+		[entity.id, entity.userId, entity.challengedId, challengeStatus, round, game], function(err, result) {
 			callback(err, result);
 			pool.end;
 		});

@@ -10,7 +10,7 @@ router.use(bodyParser.urlencoded({     // to support URL-encoded bodies
 	extended: true
 })); 
 
-router.put('/:id/users/:userId', VerifyToken, function(req, res) {
+router.put('/:id/users/', VerifyToken, function(req, res) {
 	var dbrepo = new DbRepo();
 	if (req.userId != req.params.userId) return res.status(500).send({ auth: false, message: 'Failed to authenticate token. (id)' });
 	

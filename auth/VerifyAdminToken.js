@@ -2,11 +2,10 @@ var jwt = require('jsonwebtoken');
 var config = require('../protected-config');
 var ValidateToken = require('./ValidateToken');
 
-function verifyToken (req, res, next) {
 
-  ValidateToken(req, res, next, 'user');
-
+function verifyAdminToken (req, res, next) {
+  ValidateToken(req, res, next, 'admin');
 }
 
 
-module.exports = verifyToken;
+module.exports = verifyAdminToken;
